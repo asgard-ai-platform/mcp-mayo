@@ -1,117 +1,218 @@
-# MCP Server 範本
+# mcp-mayo
 
-建構 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 伺服器的可重用範本，將 AI 可呼叫的工具暴露給 AI 客戶端。[Asgard AI Platform](https://github.com/asgard-ai-platform) 開源生態系的一部分。
+[![PyPI version](https://img.shields.io/pypi/v/mcp-mayo)](https://pypi.org/project/mcp-mayo/)
+[![Python](https://img.shields.io/pypi/pyversions/mcp-mayo)](https://pypi.org/project/mcp-mayo/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MCP](https://img.shields.io/badge/MCP-compatible-blue)](https://modelcontextprotocol.io/)
+[![GitHub stars](https://img.shields.io/github/stars/asgard-ai-platform/mcp-mayo)](https://github.com/asgard-ai-platform/mcp-mayo/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/asgard-ai-platform/mcp-mayo)](https://github.com/asgard-ai-platform/mcp-mayo/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/asgard-ai-platform/mcp-mayo)](https://github.com/asgard-ai-platform/mcp-mayo/commits/main)
 
-[English](README.md)
+[MAYO Apollo](https://www.mayohr.com/) 的 MCP Server — 把 HRM 平台的人事 (Foundation)、差勤 (Attendance)、薪資勞健保 (Payroll) API 透過 [Model Context Protocol](https://modelcontextprotocol.io/) 包成 AI 可呼叫的工具。
 
-## 功能特色
+[English](README.md) · 屬於 [Asgard AI Platform](https://github.com/asgard-ai-platform) 開源生態系。
 
-- **stdio JSON-RPC 2.0** — 標準 MCP 傳輸協定
-- **`@mcp.tool()` 裝飾器** — Pydantic 型別化工具註冊
-- **可插拔連接器** — REST、RSS、Scraper、MQTT、GraphQL
-- **可插拔認證** — Bearer Token、API Key、OAuth 2.0、無認證
-- **E2E 測試** — 即時 API 測試執行器
-- **Claude Code 整合** — `.mcp.json` 自動發現 + `CLAUDE.md`
+## 特色
 
-## 如何使用此範本
+- **33 個工具** — 28 個一對一的 endpoint 包裝 + 5 個語意化組合工具
+- **三個後端網域** — Foundation / Attendance / Payroll 用同一把 `hrmlicense` API key 就能存取
+- **日期格式自動轉換** — 呼叫端用 ISO `YYYY-MM-DD` / `YYYY-MM`，內部轉成各 endpoint 要求的格式
+- **語意化聚合** — 例如 `get_employee_profile`、`get_organization_snapshot_as_of`、`get_attendance_summary` 一次回應完整資訊
+- **Pydantic 型別** — 每個參數都有 AI 可讀的描述
+- **E2E 測試** — 對著 PRE 環境跑完所有工具
 
-1. 在 GitHub 上點擊 **「Use this template」**（或 Fork 此 Repo）
-2. 重新命名為 `mcp-{你的服務}` （例如 `mcp-ecpay`）
-3. 透過 init script 初始化 
-4. **選擇連接器** — 保留 `connectors/` 中需要的，刪除其餘
-5. **選擇認證** — 保留 `auth/` 中需要的，刪除其餘
-6. **設定** — 更新 `config/settings.py` 的 API 端點
-7. **建構工具** — 用你的實際工具替換 `tools/sample_tools.py`
+## 前置條件
 
-## 快速開始
+- Python 3.10+
+- `uv` (建議) 或 `pip`
+- MAYO 核發的 `hrmlicense` API key，且具備 FD / PT / PY 所需的讀取權限
+
+## 安裝
+
+### 從原始碼 (目前狀態)
 
 ```bash
-# 初始化專案（替換 {service} 佔位符）
-uv run --no-project python scripts/init.py
-
-# 環境設定
+git clone https://github.com/asgard-ai-platform/mcp-mayo.git
+cd mcp-mayo
 uv sync
-
-# 設定認證
 cp .env.example .env
-# 編輯 .env 填入你的 API 認證資訊
+# 編輯 .env，填入 MAYO_API_KEY
+```
 
-# 測試連線
-uv run --env-file .env python scripts/auth/test_connection.py
+### 從 PyPI (發佈後)
 
-# 啟動伺服器
+```bash
+uv add mcp-mayo
+# 或
+pip install mcp-mayo
+```
+
+## 設定
+
+| 環境變數 | 必要 | 用途 |
+|---|---|---|
+| `MAYO_API_KEY` | 是 | 放在 `hrmlicense` header 的金鑰；單一憑證即可存取 FD / PT / PY |
+
+## 使用方式
+
+### 本機執行
+
+```bash
 uv run --env-file .env python mcp_server.py
 ```
 
-## 專案結構
+### Claude Desktop
 
-```
-mcp-{service}/
-├── app.py                  # MCPServer 單例
-├── mcp_server.py           # 入口（stdio 傳輸）
-├── config/settings.py      # API 端點、URL 建構、認證委派
-├── connectors/             # 資料來源連接器（選一個）
-│   ├── rest_client.py      #   HTTP REST（含重試＋分頁）
-│   ├── rss_client.py       #   RSS/Atom 訂閱解析
-│   ├── scraper_client.py   #   網頁爬取（BeautifulSoup）
-│   ├── mqtt_client.py      #   MQTT（IoT / 工業）
-│   └── graphql_client.py   #   GraphQL（Relay 分頁）
-├── auth/                   # 認證模組（選一個）
-│   ├── bearer.py           #   Bearer Token
-│   ├── api_key.py          #   API Key（Header 或 Query Param）
-│   ├── oauth2.py           #   OAuth 2.0 客戶端憑證
-│   └── none.py             #   無認證（公開 API）
-├── tools/                  # 你的 MCP 工具
-│   └── sample_tools.py     #   範例工具（請替換）
-├── tests/test_all_tools.py # E2E 測試執行器
-└── scripts/auth/test_connection.py
+```json
+{
+  "mcpServers": {
+    "mayo": {
+      "command": "uvx",
+      "args": ["mcp-mayo"],
+      "env": {
+        "MAYO_API_KEY": "your_hrmlicense_token"
+      }
+    }
+  }
+}
 ```
 
-## 連接器
+### Claude Code (`.mcp.json`)
 
-| 連接器 | 用途 | 額外依賴 |
-|--------|------|----------|
-| `rest_client.py` | REST API（大多數服務） | 無（使用 `requests`） |
-| `rss_client.py` | RSS/Atom 訂閱（新聞、部落格） | `feedparser` |
-| `scraper_client.py` | 網頁爬取（論壇、公開頁面） | `beautifulsoup4` |
-| `mqtt_client.py` | IoT / 工業（MQTT Broker） | `paho-mqtt` |
-| `graphql_client.py` | GraphQL API（Meta 等） | 無（使用 `requests`） |
+```json
+{
+  "mcpServers": {
+    "mayo": {
+      "command": "uv",
+      "args": ["run", "mcp-mayo"],
+      "cwd": "${PWD}",
+      "env": {
+        "PYTHONPATH": "${PWD}",
+        "MAYO_API_KEY": "${MAYO_API_KEY}"
+      }
+    }
+  }
+}
+```
 
-## 認證模組
+### Cursor / 其他 IDE
 
-| 模組 | 模式 | 環境變數 |
-|------|------|----------|
-| `bearer.py` | `Authorization: Bearer <token>` | `SERVICE_API_TOKEN` |
-| `api_key.py` | Header 或 Query Param | `SERVICE_API_KEY` |
-| `oauth2.py` | 客戶端憑證 + 自動刷新 | `SERVICE_CLIENT_ID`、`SERVICE_CLIENT_SECRET` |
-| `none.py` | 無認證 | （無） |
+讓 MCP client 以 `uvx mcp-mayo` 啟動，並在環境中提供 `MAYO_API_KEY`。
 
-## 新增工具
+## 工具清單
 
-```python
-from app import mcp
-from pydantic import Field
-from connectors.rest_client import api_get
+### 語意化工具 (AI 優先使用)
 
-@mcp.tool()
-def get_order(
-    order_id: str = Field(description="要查詢的訂單 ID"),
-) -> dict:
-    """取得特定訂單的詳細資訊。"""
-    return api_get("order_detail", path_params={"order_id": order_id})
+| 工具 | 功能 |
+|---|---|
+| `get_employee_profile` | 一次拿到一位員工的 PA + 工作經歷 + 學歷 |
+| `get_organization_snapshot_as_of` | 指定日期的組織樹 + 在職名單 |
+| `get_attendance_summary` | 一次取回區間的出勤/異常/加班/請假 |
+| `search_active_employees` | 預設以今天為基準的在職名單 |
+| `get_monthly_payroll_report` | 以 ISO `YYYY-MM` 取單月薪資發放清冊 |
+
+### 人事 Foundation (FD) — 15
+
+`list_active_employees` ¹、`list_resigned_employees` ¹、`get_organization_tree` ¹、`export_organization_with_employees`、`export_employees`、`export_departments`、`export_organization_full`、`export_employees_full`、`export_expatriations`、`export_working_history`、`export_education_history`、`export_employee_changes`、`export_organization_changes`、`export_pa_options`、`export_company_custom_fields`
+
+### 差勤 Attendance (PT) — 8
+
+`get_attendance_rules`、`get_attendance_history`、`get_attendance_abnormal`、`get_forgot_checkin_records`、`get_leave_history`、`get_employee_calendar`、`get_overtime_records`、`get_trip_history` ²
+
+### 薪資勞健保 Payroll (PY) — 5
+
+`get_monthly_labor_insurance` ²、`get_monthly_nhi` ²、`get_monthly_labor_pension` ²、`get_salary_insurance_detail`、`get_salary_bonus_list`
+
+¹ 三支 `/ClientOut/ReportCenter/*` (加上依賴它們的語意化工具 `search_active_employees` / `get_organization_snapshot_as_of`) 目前在 PRE Foundation 後端會回 404，工具仍保留以便 MAYO 補上該環境路由後立即生效。
+
+² 在 MAYO 官方 Postman collection 中被標註為伺服器端已報錯的 endpoint。本專案仍保留包裝，當 MAYO 修復後立即可用；docstring 內會看到 `KNOWN ISSUE` 標示。
+
+## 使用範例
+
+### 「C030010 部門還在職的人」
+
+> **You:** 昨天 C030010 部門還在職的人列一下
+
+**AI 呼叫：**
+
+```
+search_active_employees(
+  dept_code = "C030010",
+)
+```
+
+**結果：** `SUCCESS` — 以今天為生效日期呼叫 Foundation 的 ActiveEmployeeData，回傳在職名單。
+
+### 「員工完整資料」
+
+> **You:** 給我員編 A00384 的完整資料
+
+**AI 呼叫：**
+
+```
+get_employee_profile(
+  employee_number = "A00384",
+)
+```
+
+**結果：** `SUCCESS` — 組合 `/PA` + `/Working` + `/Education`，後兩者在本地 filter 到 A00384。
+
+### 「9/1 到 9/7 的出勤統計」
+
+> **You:** 9/1 到 9/7 的出勤統計，含異常跟加班
+
+**AI 呼叫：**
+
+```
+get_attendance_summary(
+  start_date = "2025-09-01",
+  end_date   = "2025-09-07",
+)
+```
+
+**結果：** `SUCCESS` — 回傳該區間的出勤/異常/加班/請假各區塊。
+
+### 「單月薪資清冊」
+
+> **You:** 2025-01 的薪資發放清冊
+
+**AI 呼叫：**
+
+```
+get_monthly_payroll_report(
+  year_month = "2025-01",
+)
+```
+
+**結果：** `SUCCESS` — 內部轉成 `2025/01` 呼叫 SalaryBonusList。
+
+## 架構
+
+```
+stdio (JSON-RPC 2.0)
+  → mcp_server.py                 程式入口；匯入所有工具模組
+    → app.py                      FastMCP("mcp-mayo") 單例
+      → tools/                    @mcp.tool() 註冊的函式
+          foundation_tools.py       15 個 FD 包裝
+          attendance_tools.py       8 個 PT 包裝
+          payroll_tools.py          5 個 PY 包裝
+          semantic_tools.py         5 個語意化組合
+        → connectors/rest_client.py   重試 + 多網域 URL 解析
+          → auth/api_key.py           產生 {"hrmlicense": <MAYO_API_KEY>}
+            → config/settings.py      BASE_URLS + ENDPOINTS (依網域分類)
 ```
 
 ## 測試
 
 ```bash
-uv run python scripts/auth/test_connection.py   # 驗證認證資訊
-uv run python tests/test_all_tools.py           # 執行所有工具 E2E 測試
+uv run --env-file .env python scripts/auth/test_connection.py   # 探測 FD / PT / PY
+uv run --env-file .env python tests/test_all_tools.py           # 跑全部工具
 ```
+
+## 貢獻
+
+請見 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 授權
 
-MIT License — 詳見 [LICENSE](LICENSE)。
-
-## Asgard 生態系
-
-此範本驅動 63+ 個 MCP 伺服器，連接 AI 至電商、金融、政府開放資料、IoT、社群媒體等真實世界服務。查看完整 [Asgard AI Platform](https://github.com/asgard-ai-platform)。
+MIT — 詳見 [LICENSE](LICENSE)。

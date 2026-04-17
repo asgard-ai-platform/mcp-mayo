@@ -1,4 +1,5 @@
-reference
+reference/
+references/
 
 # Python
 __pycache__/
@@ -17,9 +18,10 @@ env/
 # Environment variables
 .env
 
-# IDE
+# IDE / tooling
 .idea/
 .vscode/
+.claude/
 *.swp
 *.swo
 *~

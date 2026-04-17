@@ -1,59 +1,77 @@
-# Contributing
+# Contributing to mcp-mayo
 
-Thank you for contributing to this MCP Server!
+Thanks for contributing! This document covers setup, conventions, and how to add new tools.
 
 ## Setup
 
 ```bash
-git clone https://github.com/asgard-ai-platform/mcp-{service}.git
-cd mcp-{service}
-uv venv && source .venv/bin/activate
-uv pip install -e .
+git clone https://github.com/asgard-ai-platform/mcp-mayo.git
+cd mcp-mayo
+uv sync
 cp .env.example .env
-# Edit .env with your credentials
+# Set MAYO_API_KEY to a valid hrmlicense token
 ```
 
-## Adding a New Tool
+## Adding a new tool
 
-1. **Choose module**: Pick an existing file in `tools/` or create a new `tools/{domain}_tools.py`
-2. **Import helpers**: `from connectors.rest_client import api_get, fetch_all_pages`
+1. **Pick a module** in `tools/`:
+   - `foundation_tools.py` for Foundation (FD) endpoints
+   - `attendance_tools.py` for Attendance (PT) endpoints
+   - `payroll_tools.py` for Payroll (PY) endpoints
+   - `semantic_tools.py` for higher-level compositions that fan out across the above
+
+2. **Register the endpoint** in `config/settings.py`:
+
+   ```python
+   ENDPOINTS = {
+       # ... existing
+       "my_new_endpoint": ("foundation", "/api/hrmlicense/ClientOut/MyNewEndpoint"),
+   }
+   ```
+
 3. **Write the tool**:
+
    ```python
    from app import mcp
    from pydantic import Field
+   from connectors.rest_client import api_get
+   from tools._util import _val, filter_none
 
    @mcp.tool()
    def my_new_tool(
-       param: str = Field(description="What this param does"),
+       query_date: str = Field(description="Reference date in `YYYY-MM-DD` format"),
+       dept_code: str | None = Field(default=None, description="Optional department filter"),
    ) -> dict:
-       """What this tool does — shown in MCP tools/list."""
-       data = api_get("endpoint_key", path_params={"id": param})
-       return {"result": data}
+       """One-line summary shown in tools/list; expand below with 2-3 sentences of detail."""
+       params = filter_none({
+           "queryDate": query_date,
+           "deptCode": _val(dept_code),
+       })
+       return api_get("my_new_endpoint", params=params)
    ```
-4. **Register**: If you created a new module, add `import tools.{module}  # noqa: F401` in `mcp_server.py`
-5. **Test**: Add a test case in `tests/test_all_tools.py`
-6. **Verify**: Run `python tests/test_all_tools.py`
 
-## Code Conventions
+4. **If you created a new tool module**, add its import to `mcp_server.py` so the decorator runs on startup.
 
-- English for code, docstrings, and tool descriptions
-- Use connector helpers from `connectors/` — never call `requests` directly in tool functions
-- All tools return `dict`
-- Use Pydantic `Field()` for parameter descriptions
-- Only add dependencies that your connector type requires
+5. **Add an E2E test case** in `tests/test_all_tools.py`.
 
-## Testing
+6. **Verify** with:
 
-All tests run against the live API:
-```bash
-python scripts/auth/test_connection.py   # Validate credentials
-python tests/test_all_tools.py           # Run all tool tests
-```
+   ```bash
+   uv run --env-file .env python tests/test_all_tools.py
+   ```
 
-## Pull Requests
+## Code conventions
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feat/add-new-tool`
-3. Make your changes
-4. Run tests
-5. Submit a PR with a clear description
+- **English** for all code, docstrings, tool descriptions, and commit messages (Chinese is fine in conversation but not in the repo)
+- **Always** use `api_get` / `api_post` from `connectors.rest_client` — never call `requests` directly in tool code
+- Use `_val()` from `tools._util` for every `Field(default=...)` parameter to neutralize the Pydantic FieldInfo pitfall when tools are invoked directly
+- Use `filter_none()` to drop `None` values before sending query params
+- Date inputs: accept ISO `YYYY-MM-DD` / `YYYY-MM` and convert internally with `iso_to_slash_date` / `iso_to_year_month` helpers when the endpoint needs slash format
+- Tools return `dict` (MCP serializes them to JSON)
+- Mark a tool with `KNOWN ISSUE:` in its docstring if it wraps an endpoint that MAYO has flagged as failing upstream
+
+## Pull requests
+
+1. Fork and branch (`git checkout -b feat/my-change`)
+2. Run the connection test and E2E suite before pushing
+3. Open a PR with a clear description and any relevant test output

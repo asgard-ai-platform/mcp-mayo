@@ -1,12 +1,12 @@
 {
   "mcpServers": {
-    "{service}": {
+    "mayo": {
       "command": "uv",
-      "args": ["run", "mcp-service"],
+      "args": ["run", "mcp-mayo"],
       "cwd": "${PWD}",
       "env": {
         "PYTHONPATH": "${PWD}",
-        "SERVICE_API_TOKEN": "${SERVICE_API_TOKEN}"
+        "MAYO_API_KEY": "${MAYO_API_KEY}"
       }
     }
   }

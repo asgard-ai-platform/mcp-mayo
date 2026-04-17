@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-import sys
-import os
+"""Entry point for the mcp-mayo server.
 
-# Import tool modules to trigger @mcp.tool() decorator registration.
-# TODO: Replace with your actual tool module imports.
-import tools.sample_tools  # noqa: F401
+Side-effect imports below trigger `@mcp.tool()` registration in each module.
+"""
+
+import tools.foundation_tools  # noqa: F401
+import tools.attendance_tools  # noqa: F401
+import tools.payroll_tools  # noqa: F401
+import tools.semantic_tools  # noqa: F401
 
 from app import mcp
 
 
 def main():
-    mcp.run()  # Default stdio transport
+    mcp.run()  # stdio transport
 
 
 if __name__ == "__main__":

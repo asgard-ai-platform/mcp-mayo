@@ -1,56 +1,67 @@
-import os
+"""Configuration for MAYO Apollo HRM backends.
 
-# =============================================================================
-# TODO: Update these values for your service
-# =============================================================================
+MAYO exposes three independent backend domains that all share the same
+`hrmlicense` authentication. Endpoint keys are tagged with their domain
+so the URL builder can resolve the correct base URL.
+"""
 
-# API base URL
-BASE_URL = "https://api.example.com"
+from auth.api_key import get_auth_headers
 
-# API version prefix
-API_VERSION = "v1"
+# -----------------------------------------------------------------------------
+# Base URLs — pre-production environment (test env used for this MCP server).
+# Production URLs are intentionally NOT wired up; flip these in a fork if you
+# need production access and your credentials allow it.
+# -----------------------------------------------------------------------------
+BASE_URLS = {
+    "foundation": "https://pre-linkup-be.mayohr.com",
+    "attendance": "https://pre-pt-be.mayohr.com",
+    "payroll": "https://pre-py-be.mayohr.com",
+}
 
-# Default pagination size
-DEFAULT_PER_PAGE = 50
+# Default page size for endpoints that support pagination (EmployeeChangeContent,
+# OrgChangeContent). MAYO uses `pageSize` as the parameter name.
+DEFAULT_PAGE_SIZE = 20
 
-# =============================================================================
-# Auth — choose ONE auth module and import it here
-# =============================================================================
-# For Bearer token auth:
-# from auth.bearer import get_auth_headers
-#
-# For API key auth:
-# from auth.api_key import get_auth_headers
-#
-# For OAuth 2.0 auth:
-# from auth.oauth2 import get_auth_headers
-#
-# For no auth (public APIs):
-# from auth.none import get_auth_headers
-
-from auth.bearer import get_auth_headers  # TODO: change to your auth module
-
-# =============================================================================
-# Endpoint map — define your API endpoints here
-# =============================================================================
-# Supports path parameter substitution: {param} will be replaced by kwargs
-#
-# Example:
-#   ENDPOINTS = {
-#       "orders": "/v1/orders",
-#       "order_detail": "/v1/orders/{order_id}",
-#       "products": "/v1/products",
-#       "product_detail": "/v1/products/{product_id}",
-#   }
-
-ENDPOINTS = {
-    "list_items": f"/{API_VERSION}/items",
-    "get_item": f"/{API_VERSION}/items/{{item_id}}",
+# -----------------------------------------------------------------------------
+# Endpoint map — key -> (domain, path_template)
+# -----------------------------------------------------------------------------
+ENDPOINTS: dict[str, tuple[str, str]] = {
+    # ----- Foundation (FD) -----
+    "active_employees": ("foundation", "/api/hrmlicense/ClientOut/ReportCenter/ActiveEmployeeData"),
+    "resigned_employees": ("foundation", "/api/hrmlicense/ClientOut/ReportCenter/ResignAndLeaveData"),
+    "organization_tree": ("foundation", "/api/hrmlicense/ClientOut/ReportCenter/OrgData"),
+    "export_om_and_pa": ("foundation", "/api/hrmlicense/ClientOut/OMandPA"),
+    "export_employee": ("foundation", "/api/hrmlicense/ClientOut/Employee"),
+    "export_department": ("foundation", "/api/hrmlicense/ClientOut/Department"),
+    "export_employee_changes": ("foundation", "/api/hrmlicense/ClientOut/EmployeeChangeContent"),
+    "export_org_changes": ("foundation", "/api/hrmlicense/ClientOut/OrgChangeContent"),
+    "export_expatriation": ("foundation", "/api/hrmlicense/ClientOut/Expatriation"),
+    "export_om_full": ("foundation", "/api/hrmlicense/ClientOut/OM"),
+    "export_pa_full": ("foundation", "/api/hrmlicense/ClientOut/PA"),
+    "export_working": ("foundation", "/api/hrmlicense/ClientOut/Working"),
+    "export_education": ("foundation", "/api/hrmlicense/ClientOut/Education"),
+    "export_pa_options": ("foundation", "/api/hrmlicense/ClientOut/PaOptions"),
+    "export_company_custom_fields": ("foundation", "/api/hrmlicense/ClientOut/CompanyCustomFields"),
+    # ----- Attendance (PT) -----
+    "attendance_rules": ("attendance", "/api/hrmlicense/exportdata_attendance_rule"),
+    "attendance_history": ("attendance", "/api/hrmlicense/exportdata_attendance_history"),
+    "attendance_abnormal": ("attendance", "/api/hrmlicense/exportdata_attendance_abnormal"),
+    "forgot_checkin": ("attendance", "/api/hrmlicense/exportdata_forgot_checkin_record"),
+    "leave_history": ("attendance", "/api/hrmlicense/exportdata_leave_historyV2"),
+    "employee_calendar": ("attendance", "/api/hrmlicense/exportdata_employee_calendar"),
+    "overtime_records": ("attendance", "/api/hrmlicense/exportdata_overtime_record"),
+    "trip_history": ("attendance", "/api/hrmlicense/exportdata_trip_history"),
+    # ----- Payroll (PY) -----
+    "monthly_labor_insurance": ("payroll", "/api/hrmlicense/PYClientOut_Insurance/MonthLabor"),
+    "monthly_nhi": ("payroll", "/api/hrmlicense/PYClientOut_Insurance/MonthNHI"),
+    "monthly_labor_pension": ("payroll", "/api/hrmlicense/PYClientOut_Insurance/MonthLaborPension"),
+    "salary_insurance": ("payroll", "/api/hrmlicense/PYClientOut_Salary/SalaryInsurance"),
+    "salary_bonus_list": ("payroll", "/api/hrmlicense/PYClientOut_Salary/SalaryBonusList"),
 }
 
 
 def get_headers() -> dict:
-    """Get request headers including auth."""
+    """Return base HTTP headers including the `hrmlicense` auth header."""
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -59,20 +70,18 @@ def get_headers() -> dict:
     return headers
 
 
-def get_url(endpoint_key: str, **kwargs) -> str:
-    """Build full URL for an endpoint with path parameter substitution.
+def get_url(endpoint_key: str, **path_params) -> str:
+    """Resolve a MAYO endpoint key to a full URL.
 
     Args:
-        endpoint_key: Key from ENDPOINTS dict.
-        **kwargs: Path parameters to substitute (e.g., item_id="123").
-
-    Returns:
-        Full URL string.
+        endpoint_key: A key from ENDPOINTS.
+        **path_params: Values to substitute into a path template (if any).
 
     Raises:
-        KeyError: If endpoint_key not found in ENDPOINTS.
+        KeyError: If the endpoint key is unknown.
     """
-    path = ENDPOINTS[endpoint_key]
-    if kwargs:
-        path = path.format(**kwargs)
-    return f"{BASE_URL}{path}"
+    domain, path = ENDPOINTS[endpoint_key]
+    base = BASE_URLS[domain]
+    if path_params:
+        path = path.format(**path_params)
+    return f"{base}{path}"

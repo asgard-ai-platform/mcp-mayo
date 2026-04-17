@@ -3,39 +3,54 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-# TODO: Replace {service} with your service name (e.g., "mcp-ecpay")
-name = "mcp-{service}"
+name = "mcp-mayo"
 version = "0.1.0"
-description = "MCP Server for {Service Name} — AI-callable tools via Model Context Protocol"
+description = "MCP Server for MAYO Apollo HRM — AI-callable tools for people, attendance, and payroll data via the Model Context Protocol"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
     {name = "Asgard AI Platform", email = "dev@asgard.ai"},
 ]
+keywords = [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "ai-tools",
+    "mayo",
+    "mayohr",
+    "apollo",
+    "hrm",
+    "hr",
+    "human-resources",
+    "payroll",
+    "attendance",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
-# Base dependencies (always required)
 dependencies = [
     "requests>=2.31.0",
     "mcp>=1.0.0",
 ]
 
-# ---------------------------------------------------------------------------
-# Connector-specific dependencies — uncomment what you need:
-# ---------------------------------------------------------------------------
-# RSS connector:
-#   "feedparser>=6.0.0",
-#
-# Scraper connector:
-#   "beautifulsoup4>=4.12.0",
-#
-# MQTT connector:
-#   "paho-mqtt>=2.0.0",
-# ---------------------------------------------------------------------------
+[project.urls]
+Homepage = "https://github.com/asgard-ai-platform/mcp-mayo"
+Repository = "https://github.com/asgard-ai-platform/mcp-mayo"
+Issues = "https://github.com/asgard-ai-platform/mcp-mayo/issues"
 
 [project.scripts]
-# TODO: Replace {service} with your service name
-mcp-service = "mcp_server:main"
+mcp-mayo = "mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["config", "connectors", "auth", "tools"]
@@ -43,3 +58,15 @@ packages = ["config", "connectors", "auth", "tools"]
 [tool.hatch.build.targets.wheel.force-include]
 "app.py" = "app.py"
 "mcp_server.py" = "mcp_server.py"
+
+[tool.hatch.build.targets.sdist]
+# Ship source + user-facing docs; exclude local tool state, internal design
+# documents, and anything that might accidentally carry credentials.
+exclude = [
+    ".claude/",
+    ".env",
+    ".DS_Store",
+    "references/",
+    "docs/",
+    "dist/",
+]
