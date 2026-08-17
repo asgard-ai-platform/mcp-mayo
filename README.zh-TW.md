@@ -1,4 +1,4 @@
-# mcp-mayo
+# MCP Mayo
 
 [![PyPI version](https://img.shields.io/pypi/v/mcp-mayo)](https://pypi.org/project/mcp-mayo/)
 [![Python](https://img.shields.io/pypi/pyversions/mcp-mayo)](https://pypi.org/project/mcp-mayo/)
@@ -12,7 +12,7 @@
 
 [English](README.md) · 屬於 [Asgard AI Platform](https://github.com/asgard-ai-platform) 開源生態系。
 
-## 特色
+## 這個專案做什麼 (What This Does)
 
 - **33 個工具** — 28 個一對一的 endpoint 包裝 + 5 個語意化組合工具
 - **三個後端網域** — Foundation / Attendance / Payroll 用同一把 `hrmlicense` API key 就能存取
@@ -21,15 +21,21 @@
 - **Pydantic 型別** — 每個參數都有 AI 可讀的描述
 - **E2E 測試** — 對著 PRE 環境跑完所有工具
 
-## 前置條件
+## 快速開始 (Quick Start)
 
-- Python 3.10+
-- `uv` (建議) 或 `pip`
-- MAYO 核發的 `hrmlicense` API key，且具備 FD / PT / PY 所需的讀取權限
+### 安裝 (Install)
 
-## 安裝
+需要 Python 3.10+、`uv` (建議) 或 `pip`，以及 MAYO 核發的 `hrmlicense` API key，且具備 FD / PT / PY 所需的讀取權限。
 
-### 從原始碼 (目前狀態)
+從 PyPI (發佈後)：
+
+```bash
+uv add mcp-mayo
+# 或
+pip install mcp-mayo
+```
+
+從原始碼 (目前狀態)：
 
 ```bash
 git clone https://github.com/asgard-ai-platform/mcp-mayo.git
@@ -39,45 +45,31 @@ cp .env.example .env
 # 編輯 .env，填入 MAYO_API_KEY
 ```
 
-### 從 PyPI (發佈後)
+設定金鑰：
 
 ```bash
-uv add mcp-mayo
-# 或
-pip install mcp-mayo
+export MAYO_API_KEY=your_hrmlicense_token
 ```
-
-## 設定
 
 | 環境變數 | 必要 | 用途 |
 |---|---|---|
 | `MAYO_API_KEY` | 是 | 放在 `hrmlicense` header 的金鑰；單一憑證即可存取 FD / PT / PY |
 
-## 使用方式
-
-### 本機執行
+直接執行 server 確認可以啟動：
 
 ```bash
 uv run --env-file .env python mcp_server.py
 ```
 
-### Claude Desktop
+### 搭配 Claude Code 使用 (Use with Claude Code)
 
-```json
-{
-  "mcpServers": {
-    "mayo": {
-      "command": "uvx",
-      "args": ["mcp-mayo"],
-      "env": {
-        "MAYO_API_KEY": "your_hrmlicense_token"
-      }
-    }
-  }
-}
+用 Claude CLI 加入：
+
+```bash
+claude mcp add --transport stdio mayo -e MAYO_API_KEY=your_hrmlicense_token -- uvx mcp-mayo
 ```
 
-### Claude Code (`.mcp.json`)
+或在本機 clone 的專案裡用 `.mcp.json`：
 
 ```json
 {
@@ -95,13 +87,31 @@ uv run --env-file .env python mcp_server.py
 }
 ```
 
-### Cursor / 其他 IDE
+### 搭配 Claude Desktop 使用 (Use with Claude Desktop)
 
-讓 MCP client 以 `uvx mcp-mayo` 啟動，並在環境中提供 `MAYO_API_KEY`。
+加到 `claude_desktop_config.json`：
 
-## 工具清單
+```json
+{
+  "mcpServers": {
+    "mayo": {
+      "command": "uvx",
+      "args": ["mcp-mayo"],
+      "env": {
+        "MAYO_API_KEY": "your_hrmlicense_token"
+      }
+    }
+  }
+}
+```
 
-### 語意化工具 (AI 優先使用)
+### 其他 MCP client
+
+Cursor 或任何相容 MCP 的 client：讓它以 `uvx mcp-mayo` 啟動，並在環境中提供 `MAYO_API_KEY`。
+
+## 工具清單 (33)
+
+### 語意化工具 — 5 (AI 優先使用)
 
 | 工具 | 功能 |
 |---|---|
