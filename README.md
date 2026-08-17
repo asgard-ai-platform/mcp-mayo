@@ -1,4 +1,4 @@
-# mcp-mayo
+# MCP Mayo
 
 [![PyPI version](https://img.shields.io/pypi/v/mcp-mayo)](https://pypi.org/project/mcp-mayo/)
 [![Python](https://img.shields.io/pypi/pyversions/mcp-mayo)](https://pypi.org/project/mcp-mayo/)
@@ -12,7 +12,7 @@ MCP Server for [MAYO Apollo](https://www.mayohr.com/) — exposes the HRM platfo
 
 [繁體中文](README.zh-TW.md) · Part of the [Asgard AI Platform](https://github.com/asgard-ai-platform) open-source ecosystem.
 
-## Features
+## What This Does
 
 - **33 tools** — 28 thin wrappers around every MAYO Apollo endpoint plus 5 semantic compositions
 - **Three backend domains** — Foundation, Attendance, Payroll — served from one MCP server with a single `hrmlicense` API key
@@ -21,15 +21,21 @@ MCP Server for [MAYO Apollo](https://www.mayohr.com/) — exposes the HRM platfo
 - **Typed with Pydantic** — every parameter has a description the AI can see
 - **E2E test runner** — exercises every registered tool against the live PRE environment
 
-## Prerequisites
+## Quick Start
 
-- Python 3.10+
-- `uv` (recommended) or `pip`
-- A MAYO-issued `hrmlicense` API key with read access to the FD / PT / PY backends you plan to call
+### Install
 
-## Installation
+Requires Python 3.10+, `uv` (recommended) or `pip`, and a MAYO-issued `hrmlicense` API key with read access to the FD / PT / PY backends you plan to call.
 
-### From source (current state)
+From PyPI (once published):
+
+```bash
+uv add mcp-mayo
+# or
+pip install mcp-mayo
+```
+
+From source (current state):
 
 ```bash
 git clone https://github.com/asgard-ai-platform/mcp-mayo.git
@@ -39,45 +45,31 @@ cp .env.example .env
 # Edit .env and set MAYO_API_KEY
 ```
 
-### From PyPI (once published)
+Set your API key:
 
 ```bash
-uv add mcp-mayo
-# or
-pip install mcp-mayo
+export MAYO_API_KEY=your_hrmlicense_token
 ```
-
-## Configuration
 
 | Env var | Required | Purpose |
 |---|---|---|
 | `MAYO_API_KEY` | Yes | The token value placed on the `hrmlicense` header; authenticates Foundation, Attendance, and Payroll in a single credential |
 
-## Usage
-
-### Run locally
+Run the server directly to verify it starts:
 
 ```bash
 uv run --env-file .env python mcp_server.py
 ```
 
-### Claude Desktop
+### Use with Claude Code
 
-```json
-{
-  "mcpServers": {
-    "mayo": {
-      "command": "uvx",
-      "args": ["mcp-mayo"],
-      "env": {
-        "MAYO_API_KEY": "your_hrmlicense_token"
-      }
-    }
-  }
-}
+Add the server via the Claude CLI:
+
+```bash
+claude mcp add --transport stdio mayo -e MAYO_API_KEY=your_hrmlicense_token -- uvx mcp-mayo
 ```
 
-### Claude Code (`.mcp.json`)
+Or, when working from a local clone, `.mcp.json`:
 
 ```json
 {
@@ -95,13 +87,31 @@ uv run --env-file .env python mcp_server.py
 }
 ```
 
-### Cursor / other IDEs
+### Use with Claude Desktop
 
-Point the MCP client at `uvx mcp-mayo` with `MAYO_API_KEY` in its environment.
+Add to your `claude_desktop_config.json`:
 
-## Tools
+```json
+{
+  "mcpServers": {
+    "mayo": {
+      "command": "uvx",
+      "args": ["mcp-mayo"],
+      "env": {
+        "MAYO_API_KEY": "your_hrmlicense_token"
+      }
+    }
+  }
+}
+```
 
-### Semantic (recommended for AI use)
+### Use with other MCP clients
+
+Cursor and any other MCP-compatible client: point it at `uvx mcp-mayo` with `MAYO_API_KEY` in its environment.
+
+## Tools (33)
+
+### Semantic (5) — recommended for AI use
 
 | Tool | What it does |
 |---|---|
